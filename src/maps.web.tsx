@@ -1,5 +1,5 @@
 // Browser stand-in for react-native-maps (used only by the web build / online demo).
-// Draws OpenStreetMap tiles (over a built-in US outline, shown while tiles load or if
+// Draws CARTO Voyager street tiles (OpenStreetMap data; over a built-in US outline, shown while tiles load or if
 // they can't) and projects markers (Web Mercator) on top;
 // the camera calls MapScreen makes (fit, animate) and the user's gestures move the view.
 import { Component, createContext, ReactNode, useContext } from 'react';
@@ -198,7 +198,7 @@ export default class MapView extends Component<Props, View2> {
         {this.state.w ? <Outline {...this.state} /> : null}
         {this.state.w ? <Tiles {...this.state} /> : null}
         <Text style={{ position: 'absolute', left: 6, bottom: 2, fontSize: 9, color: '#555', backgroundColor: 'rgba(255,255,255,.7)', paddingHorizontal: 3 }}>
-          © OpenStreetMap contributors
+          © OpenStreetMap contributors © CARTO
         </Text>
         <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={() => onPress?.({ nativeEvent: {} })} />
         <Ctx.Provider value={this.state}>{this.state.w ? children : null}</Ctx.Provider>
@@ -228,10 +228,19 @@ function Tiles({ r, w, h }: View2) {
       out.push(
         <img
           key={`${z}/${x}/${y}`}
-          src={`https://tile.openstreetmap.org/${z}/${tx}/${y}.png`}
+          src={`https://${'abcd'[(tx + y) % 4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${tx}/${y}${devicePixelRatio > 1 ? '@2x' : ''}.png`}
           alt=""
           draggable={false}
-          onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
+          onError={(e) => {
+            // fall back to OpenStreetMap, softened to match, then to the built-in outline
+            const img = e.target as HTMLImageElement;
+            if (img.dataset.osm) img.style.visibility = 'hidden';
+            else {
+              img.dataset.osm = '1';
+              img.style.filter = 'saturate(.55) brightness(1.05) contrast(.92)';
+              img.src = `https://tile.openstreetmap.org/${z}/${tx}/${y}.png`;
+            }
+          }}
           style={{ position: 'absolute', left: x * size - left, top: y * size - top, width: size + 0.5, height: size + 0.5 }}
         />,
       );
