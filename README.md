@@ -29,3 +29,19 @@ Android emulator: `npx expo start --android`.
 - The map uses Apple Maps (`react-native-maps`, muted style) instead of the Leaflet world outline.
 - The phone frame and fake status bar are gone; the app uses the real device status bar and safe areas.
 - State is in memory, so it resets when the app reloads.
+
+## Online demo (branch `online-demo`)
+
+This branch adds a browser build for the portfolio's Live demo.
+
+- `src/maps.tsx` re-exports `react-native-maps` on iOS/Android. `src/maps.web.tsx` is the browser stand-in: CARTO light tiles as the basemap, with the same markers and camera moves on top.
+- `src/webFrame.web.ts` shows the app at phone width on wide screens.
+- `app.json` sets `experiments.baseUrl` to `/MyPortfolio/goodgame-demo`, where the build is hosted.
+
+Build it with:
+
+```bash
+npx expo export --platform web --output-dir dist
+```
+
+Then copy `dist/` to `goodgame-demo/` in the MyPortfolio repo.

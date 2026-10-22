@@ -1,6 +1,6 @@
 import { Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Pressable, ScrollView, TextInput, View } from 'react-native';
-import MapView, { MapPressEvent, Marker, Region } from 'react-native-maps';
+import MapView, { MapPressEvent, Marker, Region } from '../maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Chunky } from '../components/Chunky';
 import { JoinButton } from '../components/JoinButton';
