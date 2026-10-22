@@ -1,8 +1,9 @@
 // Browser stand-in for react-native-maps (used only by the web build / online demo).
-// Draws CARTO light tiles as the basemap and projects markers (Web Mercator) on top;
+// Draws a US outline as the basemap and projects markers (Web Mercator) on top;
 // the camera calls MapScreen makes (fit, animate) move the view.
 import { Component, createContext, ReactNode, useContext } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { US } from './usOutline';
 
 type LL = { latitude: number; longitude: number };
 export type Region = LL & { latitudeDelta: number; longitudeDelta: number };
@@ -65,7 +66,7 @@ export default class MapView extends Component<Props, View2> {
     const { style, children, onPress } = this.props;
     return (
       <View
-        style={[style, { overflow: 'hidden', backgroundColor: '#dfe7e2' }]}
+        style={[style, { overflow: 'hidden', backgroundColor: '#d1e1e9' }]}
         onLayout={(e) => {
           const { width: w, height: h } = e.nativeEvent.layout;
           this.setState({ w, h }, () => {
@@ -76,42 +77,33 @@ export default class MapView extends Component<Props, View2> {
           });
         }}
       >
-        {this.state.w ? <Tiles {...this.state} /> : null}
+        {this.state.w ? <Outline {...this.state} /> : null}
         <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={() => onPress?.({ nativeEvent: {} })} />
         <Ctx.Provider value={this.state}>{this.state.w ? children : null}</Ctx.Provider>
-        <Text style={{ position: 'absolute', right: 6, bottom: 2, fontSize: 9, color: '#7a7a7a' }}>© OpenStreetMap contributors © CARTO</Text>
       </View>
     );
   }
 }
 
-// Light basemap tiles (Web Mercator), positioned to match the current region.
-function Tiles({ r, w, h }: View2) {
-  const ppd = w / r.longitudeDelta; // screen px per degree of longitude
-  const z = Math.max(0, Math.min(18, Math.round(Math.log2((ppd * 360) / 256))));
-  const n = 2 ** z;
-  const scale = (ppd * 360) / (256 * n); // screen px per tile px
-  const size = 256 * scale;
-  // world pixel (at zoom z, in tile px) of the view center
-  const cx = ((r.longitude + 180) / 360) * n * 256;
-  const cy = ((1 - yOf(r.latitude) / Math.PI) / 2) * n * 256;
-  const left = cx * scale - w / 2;
-  const top = cy * scale - h / 2;
-  const x0 = Math.floor(left / size), x1 = Math.floor((left + w) / size);
-  const y0 = Math.max(0, Math.floor(top / size)), y1 = Math.min(n - 1, Math.floor((top + h) / size));
-  const out = [];
-  for (let x = x0; x <= x1; x++)
-    for (let y = y0; y <= y1; y++) {
-      const tx = ((x % n) + n) % n;
-      out.push(
-        <Image
-          key={`${z}/${x}/${y}`}
-          source={{ uri: `https://basemaps.cartocdn.com/light_all/${z}/${tx}/${y}.png` }}
-          style={{ position: 'absolute', left: x * size - left, top: y * size - top, width: size + 0.5, height: size + 0.5 }}
-        />,
-      );
-    }
-  return <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>{out}</View>;
+// US land and state borders drawn as SVG (no network), projected like the markers.
+function Outline({ r, w, h }: View2) {
+  const ppd = w / r.longitudeDelta;
+  const cy = yOf(r.latitude);
+  const pt = (lng: number, lat: number) =>
+    `${(w / 2 + (lng - r.longitude) * ppd).toFixed(1)},${(h / 2 - (yOf(lat) - cy) * DEG * ppd).toFixed(1)}`;
+  const path = (a: number[], close: boolean) => {
+    let d = '';
+    for (let i = 0; i < a.length; i += 2) d += (i ? 'L' : 'M') + pt(a[i], a[i + 1]);
+    return close ? d + 'Z' : d;
+  };
+  const land = US.land.map((a) => path(a, true)).join('');
+  const borders = US.borders.map((a) => path(a, false)).join('');
+  return (
+    <svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+      <path d={land} fill="#f4f2ec" stroke="#b9c6c0" strokeWidth={1} strokeLinejoin="round" />
+      <path d={borders} fill="none" stroke="#cfd6d1" strokeWidth={1} strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 export function Marker({
