@@ -1,8 +1,9 @@
 // Browser stand-in for react-native-maps (used only by the web build / online demo).
-// Draws a US outline as the basemap and projects markers (Web Mercator) on top;
+// Draws OpenStreetMap tiles (over a built-in US outline, shown while tiles load or if
+// they can't) and projects markers (Web Mercator) on top;
 // the camera calls MapScreen makes (fit, animate) and the user's gestures move the view.
 import { Component, createContext, ReactNode, useContext } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { US } from './usOutline';
 
 type LL = { latitude: number; longitude: number };
@@ -195,11 +196,47 @@ export default class MapView extends Component<Props, View2> {
         }}
       >
         {this.state.w ? <Outline {...this.state} /> : null}
+        {this.state.w ? <Tiles {...this.state} /> : null}
+        <Text style={{ position: 'absolute', left: 6, bottom: 2, fontSize: 9, color: '#555', backgroundColor: 'rgba(255,255,255,.7)', paddingHorizontal: 3 }}>
+          © OpenStreetMap contributors
+        </Text>
         <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={() => onPress?.({ nativeEvent: {} })} />
         <Ctx.Provider value={this.state}>{this.state.w ? children : null}</Ctx.Provider>
       </View>
     );
   }
+}
+
+// Street-map tiles, positioned to match the same projection as the markers.
+function Tiles({ r, w, h }: View2) {
+  const ppd = w / r.longitudeDelta; // screen px per degree of longitude
+  const z = Math.max(0, Math.min(19, Math.round(Math.log2((ppd * 360) / 256))));
+  const n = 2 ** z;
+  const scale = (ppd * 360) / (256 * n); // screen px per tile px
+  const size = 256 * scale;
+  // world pixel (at zoom z, in tile px) of the view center
+  const cx = ((r.longitude + 180) / 360) * n * 256;
+  const cy = ((1 - yOf(r.latitude) / Math.PI) / 2) * n * 256;
+  const left = cx * scale - w / 2;
+  const top = cy * scale - h / 2;
+  const x0 = Math.floor(left / size), x1 = Math.floor((left + w) / size);
+  const y0 = Math.max(0, Math.floor(top / size)), y1 = Math.min(n - 1, Math.floor((top + h) / size));
+  const out = [];
+  for (let x = x0; x <= x1; x++)
+    for (let y = y0; y <= y1; y++) {
+      const tx = ((x % n) + n) % n;
+      out.push(
+        <img
+          key={`${z}/${x}/${y}`}
+          src={`https://tile.openstreetmap.org/${z}/${tx}/${y}.png`}
+          alt=""
+          draggable={false}
+          onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
+          style={{ position: 'absolute', left: x * size - left, top: y * size - top, width: size + 0.5, height: size + 0.5 }}
+        />,
+      );
+    }
+  return <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>{out}</div>;
 }
 
 // US land and state borders drawn as SVG (no network), projected like the markers.
