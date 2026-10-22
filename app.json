@@ -27,7 +27,7 @@
       "expo-font"
     ],
     "experiments": {
-      "baseUrl": "/MyPortfolio/goodgame-demo"
+      "baseUrl": "/goodgame-demo"
     }
   }
 }

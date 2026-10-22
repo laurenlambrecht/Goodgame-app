@@ -36,7 +36,7 @@ This branch adds a browser build for the portfolio's Live demo.
 
 - `src/maps.tsx` re-exports `react-native-maps` on iOS/Android. `src/maps.web.tsx` is the browser stand-in: a built-in US map (`src/usOutline.ts`, from us-atlas) with the same markers and camera moves on top. No map service or API key needed.
 - `src/webFrame.web.ts` shows the app at phone width on wide screens.
-- `app.json` sets `experiments.baseUrl` to `/MyPortfolio/goodgame-demo`, where the build is hosted.
+- `app.json` sets `experiments.baseUrl` to `/goodgame-demo`, where the build is hosted (laurenlambrecht.com/goodgame-demo/).
 
 Build it with:
 
