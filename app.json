@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "GoodGame",
-    "slug": "goodgame-app",
+    "slug": "goodgame",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,6 +28,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bfb4b565-df6a-4356-88ca-a7392e5ff505"
+      }
+    },
+    "owner": "laurenlambrechts-team"
   }
 }
